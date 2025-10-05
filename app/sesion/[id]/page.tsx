@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "@/lib/i18n/request";
 
-export const runtime = "edge";
-
 export default async function SessionPage(
   props: Readonly<{
     params: Promise<{ id: string }>;

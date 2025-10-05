@@ -4,7 +4,6 @@ import { EventForm } from "@/components/admin/event-form";
 // export async function generateStaticParams() {
 //   return await getEventByCode();
 // }
-export const runtime = "edge";
 
 export default async function EditEventPage(
   props: Readonly<{
