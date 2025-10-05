@@ -1,102 +1,131 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ThemeCard } from "@/components/themes/theme-card";
-import { Theme } from "@/lib/types";
-import { useAccess } from "@/lib/context/access-context";
 import { useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getThemesByEventCode, voteTheme } from "../actions/themes";
+import { useSession } from "next-auth/react";
+import { useEventStore } from "@/lib/store/event-store";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { Theme } from "@/lib/types";
+import { useLanguageStore } from "@/lib/store/language-store";
+import useWebSocket from "react-use-websocket";
 
 export default function VotePage() {
   const router = useRouter();
-  const { access } = useAccess();
-  
-  // Mock data - In a real app, this would come from your backend
-  const [allowVoting, setAllowVoting] = useState(true);
-  
-  useEffect(() => {
-    if (!access) {
-      router.push("/");
-    }
-  }, [access, router]);
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { data: session } = useSession();
+  const translations = useLanguageStore((state) => state.translations);
+  const event = useEventStore((state) => state.currentEvent);
+  const authenticated = useAuthStore((state) => state.isAuthenticated);
 
-  // Mock themes data - In a real app, this would come from your backend
-  const [themes, setThemes] = useState<Theme[]>([
-    {
-      id: "1",
-      title: "GraphQL vs REST en 2024",
-      description: "Comparación de arquitecturas y casos de uso",
-      author: "María García",
-      tags: ["API", "Backend", "Arquitectura"],
-      votes: 5,
-      votedBy: ["user2", "user3"]
+  const { lastJsonMessage } = useWebSocket<{
+    votes: Record<string, number>;
+  }>(`wss://${process.env.NEXT_PUBLIC_WORKER_URL}/api/votes/${event?.id}`, {
+    onOpen: () => {
+      console.log("WebSocket connection opened");
     },
-    {
-      id: "2",
-      title: "Micro-frontends en la práctica",
-      description: "Experiencias reales implementando arquitecturas distribuidas",
-      author: "Carlos Ruiz",
-      tags: ["Frontend", "Arquitectura", "Escalabilidad"],
-      votes: 3,
-      votedBy: ["user1"]
+    onClose: () => {
+      console.log("WebSocket connection closed");
+    },
+    onError: (error) => {
+      console.log("WebSocket connection error", error);
+    },
+  });
+
+  const votes = lastJsonMessage?.votes;
+
+  useEffect(() => {
+    if (!authenticated) {
+      router.push("/");
+      return;
     }
-  ]);
 
-  const handleVote = async (themeId: string, remove?: boolean) => {
-    if (!allowVoting || !access?.username) return;
-
-    setThemes(prev => prev.map(theme => {
-      if (theme.id === themeId) {
-        if (remove) {
-          return {
-            ...theme,
-            votes: theme.votes - 1,
-            votedBy: theme.votedBy.filter(user => user !== access.username)
-          };
-        } else {
-          return {
-            ...theme,
-            votes: theme.votes + 1,
-            votedBy: [...theme.votedBy, access.username]
-          };
+    const loadEventAndThemes = async () => {
+      try {
+        setIsLoading(true);
+        if (!event?.code) return;
+        if (event?.allowVoting) {
+          const themesData = await getThemesByEventCode(event.code);
+          setThemes(themesData);
         }
+      } catch (error) {
+        console.error("Error loading event data:", error);
+      } finally {
+        setIsLoading(false);
       }
-      return theme;
-    }));
-  };
+    };
 
-  if (!access) {
-    return null;
-  }
+    loadEventAndThemes();
+  }, []);
+
+  const handleVote = async (themeId: string) => {
+    console.log("session", event?.allowVoting);
+
+    if (!event?.allowVoting) {
+      return;
+    }
+
+    try {
+      const updatedTheme = await voteTheme(
+        event.id,
+        themeId,
+        session?.user?.name ?? ""
+      );
+
+      if (updatedTheme) {
+        setThemes((prevThemes) =>
+          prevThemes.map((theme) =>
+            theme.id === themeId ? updatedTheme : theme
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error al votar:", error);
+    }
+  };
 
   return (
     <main className="min-h-screen py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Votar Temas</h1>
+        <h1 className="text-4xl font-bold mb-8">
+          {translations.votePage.title}
+        </h1>
 
-        {!allowVoting && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Votaciones Cerradas</AlertTitle>
-            <AlertDescription>
-              La votación de temas está temporalmente cerrada por el administrador.
-            </AlertDescription>
-          </Alert>
+        {isLoading ? (
+          <div className="flex justify-center items-center min-h-[200px]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            {!event?.allowVoting && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>{translations.votePage.votingClosed}</AlertTitle>
+                <AlertDescription>
+                  {translations.votePage.votingClosedDescription}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-6">
+              {themes.map((theme) => (
+                <ThemeCard
+                  key={theme.id}
+                  theme={theme}
+                  onVote={handleVote}
+                  votes={votes?.[theme?.id ?? ""] ?? 0}
+                  hasVoted={theme.votedBy.includes(session?.user?.name ?? "")}
+                  allowVoting={event?.allowVoting}
+                />
+              ))}
+            </div>
+          </>
         )}
-
-        <div className="space-y-6">
-          {themes.map((theme) => (
-            <ThemeCard
-              key={theme.id}
-              theme={theme}
-              onVote={handleVote}
-              hasVoted={theme.votedBy.includes(access.username)}
-              allowVoting={allowVoting}
-            />
-          ))}
-        </div>
       </div>
     </main>
   );

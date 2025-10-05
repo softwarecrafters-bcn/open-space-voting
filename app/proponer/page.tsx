@@ -1,75 +1,81 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Theme } from "@/lib/types";
-import { useAccess } from "@/lib/context/access-context";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { createTheme } from "../actions/themes";
+import { useSession } from "next-auth/react";
+import { useEventStore } from "@/lib/store/event-store";
+import { useAuthStore } from "@/lib/store/auth-store";
+import { useLanguageStore } from "@/lib/store/language-store";
 
 export default function ProposePage() {
   const router = useRouter();
-  const { access } = useAccess();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState("");
   
-  // Mock data - In a real app, this would come from your backend
-  const [allowProposals, setAllowProposals] = useState(true);
-  
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [tags, setTags] = useState<string>("");
+  const { data: session } = useSession();
+  const translations = useLanguageStore((state) => state.translations);
+
+
+  const event = useEventStore((state) => state.currentEvent);
+  const user = useAuthStore((state) => state.user);
+
   useEffect(() => {
-    if (!access) {
+    if (!user?.email) {
       router.push("/");
     }
-  }, [access, router]);
+  }, [event, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!allowProposals) {
+    if (!event?.allowProposals) {
       return;
     }
 
-    const newTheme: Theme = {
-      id: `theme-${Date.now()}`,
+    const newTheme = {
       title,
       description,
-      author: access?.username || "Anonymous",
+      author: user?.name ?? "Anonymous",
       tags: tags.split(",").map(tag => tag.trim()),
       votes: 0,
-      votedBy: []
+      votedBy: [],
+      event: event?.id || ""
     };
 
-    // In a real app, save to backend
-    router.push("/votar");
-    
+    createTheme(newTheme).then(() => {
+      console.log("Theme created");
+      router.push("/votar");
+    });
+
     // Reset form
     setTitle("");
     setDescription("");
     setTags("");
   };
 
-  if (!access) {
+  if (!event) {
     return null;
   }
 
   return (
     <main className="min-h-screen py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">Proponer un Tema</h1>
+        <h1 className="text-4xl font-bold mb-8">{translations.proposePage.title}</h1>
 
-        {!allowProposals && (
+        {!event.allowProposals && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Propuestas Cerradas</AlertTitle>
+            <AlertTitle>{translations.proposePage.proposalsClosed}</AlertTitle>
             <AlertDescription>
-              La propuesta de temas está temporalmente cerrada por el administrador.
+              {translations.proposePage.proposalsClosedDescription}
             </AlertDescription>
           </Alert>
         )}
@@ -77,54 +83,54 @@ export default function ProposePage() {
         <Card className="p-6 mb-8">
           <div className="mb-6 grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Open Space ID</Label>
-              <Input value={access.spaceId} disabled />
+              <Label>{translations.proposePage.openSpaceId}</Label>
+              <Input value={event?.code || ""} disabled />
             </div>
             <div className="space-y-2">
-              <Label>Usuario</Label>
-              <Input value={access.username} disabled />
+              <Label>{translations.proposePage.user}</Label>
+              <Input value={session?.user?.name || ""} disabled />
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Título del Tema</Label>
+              <Label htmlFor="title">{translations.proposePage.form.topicTitle}</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Escribe un título descriptivo"
+                placeholder={translations.proposePage.form.topicTitlePlaceholder}
                 required
-                disabled={!allowProposals}
+                disabled={!event.allowProposals}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Descripción</Label>
+              <Label htmlFor="description">{translations.proposePage.form.description}</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe brevemente tu propuesta..."
+                placeholder={translations.proposePage.form.descriptionPlaceholder}
                 className="min-h-[150px]"
                 required
-                disabled={!allowProposals}
+                disabled={!event.allowProposals}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tags">Etiquetas (separadas por comas)</Label>
+              <Label htmlFor="tags">{translations.proposePage.form.tags}</Label>
               <Input
                 id="tags"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
-                placeholder="tecnología, innovación, desarrollo..."
-                disabled={!allowProposals}
+                placeholder={translations.proposePage.form.tagsPlaceholder}
+                disabled={!event.allowProposals}
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={!allowProposals}>
-              Enviar Propuesta
+            <Button type="submit" className="w-full" disabled={!event.allowProposals}>
+              {translations.proposePage.form.submit}
             </Button>
           </form>
         </Card>

@@ -1,20 +1,17 @@
-"use client";
+import { Header } from "@/components/layout/header";
 
-import { usePathname } from "next/navigation";
-import { AdminHeader } from "@/components/admin/admin-header";
-
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const isLoginPage = pathname === "/admin/login";
 
   return (
-    <>
-      {!isLoginPage && <AdminHeader />}
-      {children}
-    </>
+    <div className="min-h-screen bg-background">
+      {/* <Header /> */}
+      <main>
+        {children}
+      </main>
+    </div>
   );
 }

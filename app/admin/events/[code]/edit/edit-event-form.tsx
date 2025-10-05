@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { OpenSpaceEvent } from "@/lib/types";
 import { LockOpen, Lock } from "lucide-react";
+import { updateEvent } from "@/app/actions/events";
 
 interface EditEventFormProps {
   initialEvent: OpenSpaceEvent;
@@ -19,10 +20,17 @@ export function EditEventForm({ initialEvent }: EditEventFormProps) {
   const router = useRouter();
   const [event, setEvent] = useState<OpenSpaceEvent>(initialEvent);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, save to backend
-    router.push("/admin/dashboard");
+  const handleSubmit = async (formData: FormData) => {
+    console.log("handleSubmit called");
+    console.log("event", formData);
+    
+    try {
+      const eventUpdated = await updateEvent(event.id, event);
+      console.log("eventUpdated", eventUpdated);
+      router.push("/admin/dashboard");
+    } catch (error) {
+      console.error("Error updating event:", error);
+    }
   };
 
   const toggleProposals = () => {
@@ -36,7 +44,7 @@ export function EditEventForm({ initialEvent }: EditEventFormProps) {
   return (
     <main className="min-h-screen p-8 bg-background">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Editar Open Space</h1>
+        <h1 className="text-3xl font-bold mb-8">Editar Open Space22</h1>
         
         <Card className="p-6 mb-6">
           <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg mb-6">
@@ -61,7 +69,7 @@ export function EditEventForm({ initialEvent }: EditEventFormProps) {
             />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form action={handleSubmit} method="POST" className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Nombre del Evento</Label>
               <Input

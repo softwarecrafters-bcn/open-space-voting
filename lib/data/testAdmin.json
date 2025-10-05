@@ -1,0 +1,9 @@
+{
+  "provider": "google",
+  "providerId": "YaSJrvDLz5Cj9pHu4K2ewG",
+  "email": "softwarecraftersbcn@gmail.com",
+  "name": "Admin",
+  "avatar": "https://example.com/avatar.jpg",
+  "role": "admin",
+  "createdAt": { "$date": "2024-02-04T12:00:00.000Z" }
+}

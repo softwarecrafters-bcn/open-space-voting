@@ -1,5 +1,5 @@
 export interface Theme {
-  id: string;
+  id?: string;
   title: string;
   description: string;
   author: string;
@@ -7,6 +7,10 @@ export interface Theme {
   schedule?: string;
   votes: number;
   votedBy: string[];
+  event: string;
+  time?: string;
+  location?: string;
+  participantCount?: number;
 }
 
 export interface Session {
@@ -37,14 +41,19 @@ export interface OpenSpaceAccess {
 
 export interface OpenSpaceEvent {
   id: string;
+  code: string;
   name: string;
   description: string;
   date: string;
   location: string;
   maxParticipants: number;
+  rooms: number;
+  roomsStartAt: string;
+  roomsEndAt: string;
   status: 'draft' | 'published' | 'completed';
   createdAt: string;
   updatedAt: string;
   allowProposals: boolean;
   allowVoting: boolean;
+
 }

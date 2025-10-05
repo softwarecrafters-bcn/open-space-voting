@@ -2,28 +2,44 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAccess } from "@/lib/context/access-context";
 import { EventForm } from "@/components/admin/event-form";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 export default function NewEventPage() {
   const router = useRouter();
-  const { access } = useAccess();
+  const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
-    if (!access?.isAdmin) {
-      router.push("/admin/login");
+    if (user?.email !== "softwarecraftersbcn@gmail.com") {
+      router.replace("/");
     }
-  }, [access, router]);
+  }, [user, router]);
 
-  if (!access?.isAdmin) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <main className="min-h-screen p-8 bg-background">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Crear Nuevo Open Space</h1>
-        <EventForm mode="create" />
+        <EventForm 
+          mode="create" 
+          initialEvent={{
+            id: "",
+            name: "",
+            description: "",
+            date: "",
+            location: "",
+            code: "",
+            status: "draft",
+            maxParticipants: 0,
+            rooms: 0,
+            roomsStartAt: "",
+            roomsEndAt: "",
+            allowProposals: false,
+            allowVoting: false
+          }} 
+        />
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,35 +11,63 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OpenSpaceEvent } from "@/lib/types";
 import { LockOpen, Lock, ThumbsUp } from "lucide-react";
+import { createEvent, updateEvent } from "@/app/actions/events";
 
 interface EventFormProps {
-  initialEvent?: Partial<OpenSpaceEvent>;
-  mode: 'create' | 'edit';
+  initialEvent: OpenSpaceEvent | Partial<OpenSpaceEvent>;
+  mode: "create" | "edit";
 }
 
-export function EventForm({ initialEvent, mode }: EventFormProps) {
+export function EventForm({ initialEvent, mode }: EventFormProps): React.JSX.Element {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    spaceId: initialEvent?.id || "",
-    name: initialEvent?.name || "",
-    description: initialEvent?.description || "",
-    date: initialEvent?.date || "",
-    location: initialEvent?.location || "",
-    maxParticipants: initialEvent?.maxParticipants?.toString() || "",
-    allowProposals: initialEvent?.allowProposals || false,
-    allowVoting: initialEvent?.allowVoting || false,
-    status: initialEvent?.status || "draft"
+    id: mode === 'create' ? '' : initialEvent.id,
+    code: initialEvent?.code ?? "",
+    name: initialEvent?.name ?? "",
+    description: initialEvent?.description ?? "",
+    date: initialEvent?.date ?? "",
+    location: initialEvent?.location ?? "",
+    maxParticipants: initialEvent?.maxParticipants?.toString() ?? "",  
+    rooms: initialEvent?.rooms?.toString() ?? "",
+    roomsStartAt: initialEvent?.roomsStartAt ?? "",
+    roomsEndAt: initialEvent?.roomsEndAt ?? "",
+    allowProposals: initialEvent?.allowProposals ?? false,
+    allowVoting: initialEvent?.allowVoting ?? false,
+    status: initialEvent?.status ?? "draft"
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
+    const stateKey = id === 'spaceCode' ? 'code' : id;
+    setFormData(prev => ({ ...prev, [stateKey]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, save to backend
-    router.push("/admin/dashboard");
+    
+    try {
+      const eventData = {
+        ...formData,
+        maxParticipants: parseInt(formData.maxParticipants),
+        rooms: parseInt(formData.rooms),
+        roomsStartAt: formData.roomsStartAt,
+        roomsEndAt: formData.roomsEndAt,
+      };
+
+      if (mode === 'create') {
+        // Aquí deberías llamar a una función para crear el evento
+        await createEvent(eventData);
+        console.log("Evento creado:", eventData);
+        router.replace("/admin/dashboard", { scroll: false });
+      } else {
+        await updateEvent(formData.id ?? "", eventData);
+      }
+      
+      router.replace("/admin/dashboard", { scroll: false });
+
+    } catch (error) {
+      console.error("Error updating event:", error);
+    }
   };
 
   return (
@@ -94,11 +122,11 @@ export function EventForm({ initialEvent, mode }: EventFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="spaceId">ID Open Space</Label>
+          <Label htmlFor="spaceCode">ID Open Space</Label>
           <Input
-            id="spaceId"
+            id="spaceCode"
             placeholder="Ej: os-2024"
-            value={formData.spaceId}
+            value={formData.code}
             onChange={handleChange}
             required
           />
@@ -147,6 +175,37 @@ export function EventForm({ initialEvent, mode }: EventFormProps) {
           />
         </div>
 
+        
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+            <Label htmlFor="rooms">Número de Salas</Label>
+            <Input
+              id="rooms"
+              type="number"
+              min="1"
+              max="5"
+              placeholder="1"
+              value={formData.rooms}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxParticipants">Número Máximo de Participantes</Label>
+            <Input
+              id="maxParticipants"
+              type="number"
+              min="1"
+              placeholder="100"
+              value={formData.maxParticipants}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
@@ -171,17 +230,28 @@ export function EventForm({ initialEvent, mode }: EventFormProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="maxParticipants">Número Máximo de Participantes</Label>
-          <Input
-            id="maxParticipants"
-            type="number"
-            min="1"
-            placeholder="100"
-            value={formData.maxParticipants}
-            onChange={handleChange}
-            required
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="roomsStartAt">Hora inicio</Label>
+            <Input
+              id="roomsStartAt"
+              type="time"
+              value={formData.roomsStartAt ?? "09:00"}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="roomsEndAt">Hora fin</Label>
+            <Input
+              id="roomsEndAt"
+              type="time"
+              value={formData.roomsEndAt ?? "10:00"}
+              onChange={handleChange}
+              required
+            />
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-end">

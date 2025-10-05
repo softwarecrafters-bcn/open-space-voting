@@ -1,8 +1,8 @@
 import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
-import NextAuth,{ NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -24,7 +24,7 @@ const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.provider = token.provider as string ?? undefined;
+        session.user.provider = (token.provider as string) ?? undefined;
       }
       return session;
     },

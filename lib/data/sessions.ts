@@ -15,7 +15,8 @@ export const mockSessions: Record<string, Session & { theme: Theme }> = {
       author: "María García",
       tags: ["Next.js", "React", "Frontend"],
       votes: 8,
-      votedBy: ["user1", "user2"]
+      votedBy: ["user1", "user2"],
+      event: "TIS2024"
     }
   },
   "2": {
@@ -31,7 +32,8 @@ export const mockSessions: Record<string, Session & { theme: Theme }> = {
       author: "Carlos Ruiz",
       tags: ["React", "Arquitectura", "Buenas Prácticas"],
       votes: 6,
-      votedBy: ["user3", "user4"]
+      votedBy: ["user3", "user4"],
+      event: "TIS2024"
     }
   }
 };

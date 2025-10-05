@@ -1,0 +1,13 @@
+{
+  "code": "os-1",
+  "name": "SCBCN Open Space 2025",
+  "description": "Un espacio para compartir las últimas tendencias en tecnología",
+  "date": "2025-02-22",
+  "location": "Barcelona",
+  "maxParticipants": 200,
+  "status": "published",
+  "allowProposals": false,
+  "allowVoting": false,
+  "createdAt": { "$date": "2024-02-04T12:00:00.000Z" },
+  "updatedAt": { "$date": "2024-02-04T12:00:00.000Z" }
+}

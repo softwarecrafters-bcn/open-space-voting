@@ -20,7 +20,7 @@ export function EventDetails({ event }: EventDetailsProps) {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">{event.name}</h1>
-          <Link href={`/admin/events/${event.id}/edit`}>
+          <Link href={`/admin/events/${event.code}/edit`}>
             <Button className="gap-2">
               <Edit className="w-4 h-4" />
               Editar Evento

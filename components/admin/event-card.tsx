@@ -24,7 +24,7 @@ export function EventCard({ event, onDelete }: EventCardProps) {
   };
 
   const handleDelete = () => {
-    onDelete(event.id);
+    onDelete(event.code);
     setShowDeleteDialog(false);
   };
 
@@ -58,7 +58,7 @@ export function EventCard({ event, onDelete }: EventCardProps) {
         </div>
 
         <div className="flex gap-2">
-          <Link href={`/admin/events/${event.id}/edit`} className="flex-1">
+          <Link href={`/admin/events/${event.code}/edit`} className="flex-1">
             <Button className="w-full">
               Editar
             </Button>
